@@ -1,37 +1,65 @@
-window.addEventListener('load', function() {
+window.addEventListener('load', () => {
+    // Referenciar elementos de la página
+    const msgSuccess = document.getElementById('msgSuccess');
+    const msgCerrandoSesion = document.getElementById('msgCerrandoSesion');
+    const btnCerrarSesion = document.getElementById('btnCerrarSesion');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
-    // referenciar elementos de la pagina
-    const msgSuccess = this.document.getElementById('msgSuccess');
-    const btnCerrarSesion = this.document.getElementById('btnCerrarSesion');
-
-    // recuperar nombre del usuario del localStorage
-    const result = JSON.parse(this.localStorage.getItem('result'));
+    // Recuperar nombre del usuario del localStorage
+    const result = JSON.parse(localStorage.getItem('result'));
     mostrarAlerta(`Bienvenido ${result.nombreUsuario}`);
 
-    // implementar listener para el botón de cerrar sesión
-    btnCerrarSesion.addEventListener('click', function() {
-        cerrarSesion(result.tipoDocumento, result.numeroDocumento);
-    });
+    // Implementar listener para el botón de cerrar sesión
+    btnCerrarSesion.addEventListener('click', cerrarSesion);
 });
 
+
 function mostrarAlerta(mensaje) {
+    const msgSuccess = document.getElementById('msgSuccess');
     msgSuccess.innerHTML = mensaje;
     msgSuccess.style.display = 'block';
 }
 
 function ocultarAlerta() {
+    const msgSuccess = document.getElementById('msgSuccess');
     msgSuccess.innerHTML = '';
     msgSuccess.style.display = 'none';
 }
 
-async function cerrarSesion(tipoDocumento, numeroDocumento) {
+/**
+ * Muestra el mensaje de "Cerrando sesión..." y oculta el mensaje de bienvenida.
+ */
+function mostrarCerrandoSesion() {
+    const msgSuccess = document.getElementById('msgSuccess');
+    const msgCerrandoSesion = document.getElementById('msgCerrandoSesion');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    msgSuccess.style.display = 'none'; // Ocultar el mensaje de bienvenida
+    msgCerrandoSesion.style.display = 'block';
+    loadingOverlay.style.display = 'flex'; // Mostrar la pantalla de carga
+}
+
+/**
+ * Oculta el mensaje de "Cerrando sesión..." y la pantalla de carga.
+ */
+function ocultarCerrandoSesion() {
+    const msgCerrandoSesion = document.getElementById('msgCerrandoSesion');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    msgCerrandoSesion.style.display = 'none';
+    loadingOverlay.style.display = 'none'; // Ocultar la pantalla de carga
+}
+
+/**
+ * Cierra la sesión del usuario.
+ */
+async function cerrarSesion() {
     const url = 'http://localhost:8082/login/cerrar-sesion-async';
     const data = {
-        tipoDocumento: tipoDocumento,
-        numeroDocumento: numeroDocumento
+        tipoDocumento: localStorage.getItem('tipoDocumento'),
+        numeroDocumento: localStorage.getItem('numeroDocumento')
     };
 
     try {
+        mostrarCerrandoSesion();
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -50,6 +78,8 @@ async function cerrarSesion(tipoDocumento, numeroDocumento) {
 
         if (result.codigo === '00') {
             localStorage.removeItem('result');
+            localStorage.removeItem('tipoDocumento');
+            localStorage.removeItem('numeroDocumento');
             window.location.replace('index.html');
         } else {
             mostrarAlerta(result.mensaje);
@@ -58,5 +88,7 @@ async function cerrarSesion(tipoDocumento, numeroDocumento) {
     } catch (error) {
         console.error('Error: Ocurrió un problema no identificado', error);
         mostrarAlerta('Error: Ocurrió un problema no identificado');
+    } finally {
+        ocultarCerrandoSesion();
     }
 }
